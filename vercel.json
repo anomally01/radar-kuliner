@@ -28,7 +28,6 @@
         "APP_ENV": "production",
         "APP_DEBUG": "false",
         "APP_URL": "https://radar-kuliner.vercel.app",
-        "APP_KEY": "@app_key",
         "APP_CONFIG_CACHE": "/tmp/config.php",
         "APP_EVENTS_CACHE": "/tmp/events.php",
         "APP_PACKAGES_CACHE": "/tmp/packages.php",
@@ -41,18 +40,6 @@
         "CACHE_STORE": "array",
         "QUEUE_CONNECTION": "sync",
         "FILESYSTEM_DISK": "s3",
-        "DB_CONNECTION": "@db_connection",
-        "DB_HOST": "@db_host",
-        "DB_PORT": "@db_port",
-        "DB_DATABASE": "@db_database",
-        "DB_USERNAME": "@db_username",
-        "DB_PASSWORD": "@db_password",
-        "AWS_ACCESS_KEY_ID": "@supabase_storage_key",
-        "AWS_SECRET_ACCESS_KEY": "@supabase_storage_secret",
-        "AWS_DEFAULT_REGION": "@supabase_storage_region",
-        "AWS_BUCKET": "@supabase_storage_bucket",
-        "AWS_ENDPOINT": "@supabase_storage_endpoint",
-        "AWS_USE_PATH_STYLE_ENDPOINT": "true",
-        "SUPABASE_STORAGE_URL": "@supabase_public_storage_url"
+        "AWS_USE_PATH_STYLE_ENDPOINT": "true"
     }
 }
