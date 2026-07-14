@@ -10,31 +10,28 @@
                     "bootstrap/**",
                     "config/**",
                     "database/**",
-                    "public/**",
                     "resources/**",
                     "routes/**",
-                    "storage/framework/views/.gitkeep",
+                    "storage/**",
                     "vendor/**"
                 ]
+            }
+        },
+        {
+            "src": "package.json",
+            "use": "@vercel/static-build",
+            "config": {
+                "distDir": "public"
             }
         }
     ],
     "routes": [
         {
-            "src": "/build/assets/(.*)",
-            "dest": "/public/build/assets/$1"
+            "src": "/(.*\\.php)",
+            "dest": "/api/index.php"
         },
         {
-            "src": "/build/manifest.json",
-            "dest": "/public/build/manifest.json"
-        },
-        {
-            "src": "/favicon.ico",
-            "dest": "/public/favicon.ico"
-        },
-        {
-            "src": "/robots.txt",
-            "dest": "/public/robots.txt"
+            "handle": "filesystem"
         },
         {
             "src": "/(.*)",
