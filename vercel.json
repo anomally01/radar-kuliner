@@ -10,7 +10,6 @@
                     "bootstrap/**",
                     "config/**",
                     "database/**",
-                    "public/**",
                     "resources/**",
                     "routes/**",
                     "storage/**",
@@ -19,16 +18,18 @@
             }
         },
         {
-            "src": "package.json",
-            "use": "@vercel/static-build",
-            "config": {
-                "distDir": "public"
-            }
+            "src": "public/**",
+            "use": "@vercel/static"
         }
     ],
     "routes": [
         {
-            "handle": "filesystem"
+            "src": "/build/(.*)",
+            "dest": "/public/build/$1"
+        },
+        {
+            "src": "/(favicon\\.ico|robots\\.txt)",
+            "dest": "/public/$1"
         },
         {
             "src": "/(.*)",
