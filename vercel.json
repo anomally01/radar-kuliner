@@ -10,28 +10,23 @@
                     "bootstrap/**",
                     "config/**",
                     "database/**",
+                    "public/**",
                     "resources/**",
                     "routes/**",
                     "storage/**",
                     "vendor/**"
                 ]
             }
-        },
-        {
-            "src": "package.json",
-            "use": "@vercel/static-build",
-            "config": {
-                "distDir": "public"
-            }
         }
     ],
     "routes": [
         {
-            "src": "/(.*\\.php)",
-            "dest": "/api/index.php"
+            "src": "/build/(.*)",
+            "dest": "/public/build/$1"
         },
         {
-            "handle": "filesystem"
+            "src": "/(favicon\\.ico|robots\\.txt)",
+            "dest": "/public/$1"
         },
         {
             "src": "/(.*)",
