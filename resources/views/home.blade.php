@@ -154,7 +154,7 @@
             </div>
             <div class="mb-3">
                 <label class="form-label text-sm fw-bold">Nama Tempat</label>
-                <input type="text" id="spot-name" class="form-control form-control-lg bg-light border-0 shadow-none" placeholder="Contoh: Nasi Goreng Gila Mas Bro" required>
+                <input type="text" id="spot-name" name="name" class="form-control form-control-lg bg-light border-0 shadow-none" placeholder="Contoh: Nasi Goreng Gila Mas Bro" required>
             </div>
             <div class="mb-4">
                 <label class="form-label text-sm fw-bold">Kategori</label>
@@ -253,7 +253,7 @@
 
         // 3. Load saved spots from API
         function loadSpots() {
-            fetch('/api/food-spots', {
+            fetch('/food-spots', {
                 headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': CSRF_TOKEN }
             })
             .then(res => res.json())
@@ -376,8 +376,8 @@
             const spotName = document.getElementById('spot-name').value;
             const selectedKat = document.querySelector('input[name="kategori"]:checked');
             const kategoriLabel = selectedKat ? document.querySelector(`label[for="${selectedKat.id}"]`).textContent.trim() : 'Berat';
-            // Extract category text without emoji
-            const category = kategoriLabel.replace(/[^\w\s]/gi, '').trim();
+            // Extract category text without emoji (remove emoji and leading/trailing spaces)
+            const category = kategoriLabel.replace(/^[\p{Emoji}\s]+|[\p{Emoji}\s]+$/gu, '').replace(/[^\w\s]/gu, '').trim() || 'Berat';
             
             const btn = this.querySelector('button[type="submit"]');
             const originalText = btn.innerHTML;
@@ -395,7 +395,7 @@
                 formData.append('photo', photoInput.files[0]);
             }
 
-            fetch('/api/food-spots', {
+            fetch('/food-spots', {
                 method: 'POST',
                 headers: {
                     'X-CSRF-TOKEN': CSRF_TOKEN,
