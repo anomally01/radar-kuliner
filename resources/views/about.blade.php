@@ -94,21 +94,21 @@
     <div class="row g-4 mb-5">
         <div class="col-md-3 col-6">
             <div class="card stat-card shadow-sm text-center p-4">
-                <div class="stat-number">{{ \App\Models\FoodSpot::count() }}</div>
+                <div class="stat-number">{{ $totalSpots }}</div>
                 <div class="text-muted fw-500">Total Spot</div>
                 <div class="mt-1" style="font-size:1.5rem">🗺️</div>
             </div>
         </div>
         <div class="col-md-3 col-6">
             <div class="card stat-card shadow-sm text-center p-4">
-                <div class="stat-number">{{ \App\Models\User::count() }}</div>
+                <div class="stat-number">{{ $totalMembers }}</div>
                 <div class="text-muted">Total Member</div>
                 <div class="mt-1" style="font-size:1.5rem">👥</div>
             </div>
         </div>
         <div class="col-md-3 col-6">
             <div class="card stat-card shadow-sm text-center p-4">
-                <div class="stat-number">{{ \App\Models\FoodSpot::distinct('category')->count('category') }}</div>
+                <div class="stat-number">{{ $totalCategories }}</div>
                 <div class="text-muted">Kategori</div>
                 <div class="mt-1" style="font-size:1.5rem">🍽️</div>
             </div>
@@ -140,11 +140,7 @@
                     </thead>
                     <tbody>
                         @php
-                            $categories = \App\Models\FoodSpot::selectRaw('category, count(*) as total')
-                                ->groupBy('category')
-                                ->orderByDesc('total')
-                                ->get();
-                            $totalSpots = \App\Models\FoodSpot::count();
+                            $totalSpots = $totalSpots;
                             $categoryEmojis = [
                                 'Berat' => '🍲', 'Cemilan' => '🍟', 'Minuman' => '☕',
                                 'Coffee Shop' => '☕', 'Restoran' => '🍽️', 'default' => '🍴'
