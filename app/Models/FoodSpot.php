@@ -13,6 +13,15 @@ class FoodSpot extends Model
         'latitude',
         'longitude',
         'photo',
+        'rating',
+        'visit_count',
+    ];
+
+    protected $casts = [
+        'latitude'    => 'float',
+        'longitude'   => 'float',
+        'rating'      => 'float',
+        'visit_count' => 'integer',
     ];
 
     public function user()
