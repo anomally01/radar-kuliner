@@ -141,12 +141,16 @@
         <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
     </div>
     <div class="offcanvas-body">
-        <form id="add-spot-form">
+        <form id="add-spot-form" enctype="multipart/form-data">
+            <input type="hidden" id="spot-lat" name="latitude">
+            <input type="hidden" id="spot-lng" name="longitude">
+            <input type="file" id="photo-input" name="photo" accept="image/*" class="d-none">
             <div class="mb-4 text-center mt-2">
-                <div class="d-inline-flex justify-content-center align-items-center bg-light rounded-circle border border-2 border-dashed border-danger text-danger" style="cursor:pointer; width: 80px; height: 80px;" id="upload-photo-btn">
-                    <i class="bi bi-camera fs-2"></i>
+                <div class="d-inline-flex justify-content-center align-items-center bg-light rounded-circle border border-2 border-dashed border-danger text-danger overflow-hidden" style="cursor:pointer; width: 80px; height: 80px;" id="upload-photo-btn">
+                    <i class="bi bi-camera fs-2" id="camera-icon"></i>
+                    <img id="photo-preview" src="" alt="Preview" class="d-none" style="width:100%; height:100%; object-fit:cover;">
                 </div>
-                <div class="small text-muted fw-bold mt-2">Tambahkan Foto</div>
+                <div class="small text-muted fw-bold mt-2" id="photo-label">Tambahkan Foto</div>
             </div>
             <div class="mb-3">
                 <label class="form-label text-sm fw-bold">Nama Tempat</label>
@@ -176,21 +180,21 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        const CSRF_TOKEN = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
         // 1. Initialize Map
         const map = L.map('map', {
-            zoomControl: false // Custom control position
-        }).setView([-6.175110, 106.827153], 13); // Default Jakarta
+            zoomControl: false
+        }).setView([-6.175110, 106.827153], 13);
 
-        // Add Tile Layer (CARTO Voyager - Modern & Clean)
         L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
             attribution: '&copy; OpenStreetMap contributors',
             maxZoom: 19
         }).addTo(map);
         
-        // Add Zoom Control to bottom left (so it doesn't overlap with FAB)
         L.control.zoom({ position: 'bottomleft' }).addTo(map);
 
-        // Geolocation: Find user's actual location
+        // Geolocation
         map.locate({setView: true, maxZoom: 15, enableHighAccuracy: true});
         
         map.on('locationfound', function(e) {
@@ -210,14 +214,13 @@
             }).addTo(map).bindPopup("<div class='fw-bold text-primary p-1'>📍 Lokasi Anda Saat Ini</div>").openPopup();
         });
 
-        // 2. Dummy Data & Markers
-        const dummySpots = [
-            { lat: -6.175110, lng: 106.827153, name: "Sate Ayam Madura Cak Udin", cat: "Makanan Berat", rating: 4.8, img: "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=400&q=80", icon: "bi-shop" },
-            { lat: -6.178, lng: 106.823, name: "Kopi Kenangan Senja", cat: "Minuman", rating: 4.5, img: "https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=400&q=80", icon: "bi-cup-hot-fill" },
-            { lat: -6.172, lng: 106.832, name: "Gorengan Maknyus", cat: "Cemilan", rating: 4.2, img: "https://images.unsplash.com/photo-1626804475297-41609ea264eb?auto=format&fit=crop&w=400&q=80", icon: "bi-basket2-fill" }
-        ];
+        // 2. Custom Icon Generator
+        const categoryIcons = {
+            'Berat': 'bi-shop',
+            'Cemilan': 'bi-basket2-fill',
+            'Minuman': 'bi-cup-hot-fill',
+        };
 
-        // Custom Icon Generator
         const createCustomIcon = (iconClass) => {
             return L.divIcon({
                 className: 'custom-icon-wrapper',
@@ -228,32 +231,97 @@
             });
         };
 
-        // Render Dummy Markers
-        dummySpots.forEach(spot => {
-            const marker = L.marker([spot.lat, spot.lng], { icon: createCustomIcon(spot.icon) }).addTo(map);
-            
-            const popupHTML = `
+        // Helper to create popup HTML for a spot
+        function createSpotPopup(spot) {
+            const imgHTML = spot.photo_url 
+                ? `<img src="${spot.photo_url}" class="popup-header-img" alt="${spot.name}">` 
+                : `<div class="popup-header-img bg-light d-flex align-items-center justify-content-center"><i class="bi bi-image text-muted" style="font-size:2rem"></i></div>`;
+            return `
                 <div class="d-flex flex-column" style="width: 250px;">
-                    <img src="${spot.img}" class="popup-header-img" alt="${spot.name}">
+                    ${imgHTML}
                     <div class="p-3 bg-white">
-                        <span class="badge bg-danger mb-2">${spot.cat}</span>
+                        <span class="badge bg-danger mb-2">${spot.category}</span>
                         <h5 class="fw-bold mb-1 fs-6">${spot.name}</h5>
-                        <div class="text-warning mb-3 small fw-bold">
-                            <i class="bi bi-star-fill"></i> ${spot.rating} <span class="text-muted fw-normal">(120 ulasan)</span>
+                        <div class="text-muted small mb-2">
+                            <i class="bi bi-person-fill me-1"></i>${spot.user} · ${spot.created}
                         </div>
                         <button class="btn btn-outline-danger btn-sm w-100 rounded-pill fw-bold">Lihat Detail</button>
                     </div>
                 </div>
             `;
-            marker.bindPopup(popupHTML);
-        });
+        }
 
-        // 3. Interactive "Add Spot" Flow
+        // 3. Load saved spots from API
+        function loadSpots() {
+            fetch('/api/food-spots', {
+                headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': CSRF_TOKEN }
+            })
+            .then(res => res.json())
+            .then(spots => {
+                spots.forEach(spot => {
+                    const iconClass = categoryIcons[spot.category] || 'bi-shop';
+                    const marker = L.marker([spot.lat, spot.lng], { icon: createCustomIcon(iconClass) }).addTo(map);
+                    marker.bindPopup(createSpotPopup(spot));
+                });
+            })
+            .catch(err => console.error('Failed to load spots:', err));
+        }
+        loadSpots();
+
+        // 4. Interactive "Add Spot" Flow
         let isAddMode = false;
         let newMarker = null;
         const addModeAlert = document.getElementById('add-mode-alert');
         const offcanvasEl = document.getElementById('addSpotOffcanvas');
         const offcanvas = new bootstrap.Offcanvas(offcanvasEl);
+        const photoInput = document.getElementById('photo-input');
+        const photoPreview = document.getElementById('photo-preview');
+        const cameraIcon = document.getElementById('camera-icon');
+        const photoLabel = document.getElementById('photo-label');
+        const uploadBtn = document.getElementById('upload-photo-btn');
+
+        // Photo upload: click the circle to trigger file input
+        uploadBtn.addEventListener('click', function() {
+            photoInput.click();
+        });
+
+        // Photo selected: show preview
+        photoInput.addEventListener('change', function() {
+            if (this.files && this.files[0]) {
+                const file = this.files[0];
+                // Validate size (5MB)
+                if (file.size > 5 * 1024 * 1024) {
+                    alert('Ukuran foto maksimal 5MB!');
+                    this.value = '';
+                    return;
+                }
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    photoPreview.src = e.target.result;
+                    photoPreview.classList.remove('d-none');
+                    cameraIcon.classList.add('d-none');
+                    uploadBtn.classList.remove('border-danger', 'text-danger');
+                    uploadBtn.classList.add('border-success');
+                    photoLabel.textContent = file.name.substring(0, 20) + (file.name.length > 20 ? '...' : '');
+                    photoLabel.classList.remove('text-muted');
+                    photoLabel.classList.add('text-success');
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Reset photo upload UI
+        function resetPhotoUI() {
+            photoInput.value = '';
+            photoPreview.src = '';
+            photoPreview.classList.add('d-none');
+            cameraIcon.classList.remove('d-none');
+            uploadBtn.classList.add('border-danger', 'text-danger');
+            uploadBtn.classList.remove('border-success');
+            photoLabel.textContent = 'Tambahkan Foto';
+            photoLabel.classList.add('text-muted');
+            photoLabel.classList.remove('text-success');
+        }
 
         // Click FAB to activate Add Mode
         document.getElementById('fab-add-spot').addEventListener('click', function() {
@@ -261,8 +329,6 @@
             isAddMode = true;
             addModeAlert.classList.add('show');
             document.getElementById('map').style.cursor = 'crosshair';
-            
-            // Close any open popups to declutter
             map.closePopup();
         });
 
@@ -276,64 +342,102 @@
         map.on('click', function(e) {
             if(!isAddMode) return;
             
-            // Place or move temporary marker
+            // Set hidden lat/lng inputs
+            document.getElementById('spot-lat').value = e.latlng.lat;
+            document.getElementById('spot-lng').value = e.latlng.lng;
+            
             if(newMarker) {
                 newMarker.setLatLng(e.latlng);
             } else {
                 newMarker = L.marker(e.latlng, {
                     icon: createCustomIcon('bi-pin-angle-fill'),
-                    draggable: true // Allow user to drag it for precision
+                    draggable: true
                 }).addTo(map);
                 
-                // Add bounce animation class dynamically if needed
-                newMarker.getElement().classList.add('animate__animated', 'animate__bounceInDown');
+                // Update hidden inputs when marker is dragged
+                newMarker.on('dragend', function(ev) {
+                    const pos = ev.target.getLatLng();
+                    document.getElementById('spot-lat').value = pos.lat;
+                    document.getElementById('spot-lng').value = pos.lng;
+                });
             }
             
-            // Fly to location smoothly
             map.flyTo(e.latlng, 16, { duration: 0.6 });
             
-            // Open Offcanvas form to fill details
             setTimeout(() => {
                 offcanvas.show();
             }, 700);
         });
         
-        // Handle Form Submission
+        // Handle Form Submission (Real AJAX upload)
         document.getElementById('add-spot-form').addEventListener('submit', function(e) {
             e.preventDefault();
-            const spotName = document.getElementById('spot-name').value;
             
-            // Simulate saving animation
+            const spotName = document.getElementById('spot-name').value;
+            const selectedKat = document.querySelector('input[name="kategori"]:checked');
+            const kategoriLabel = selectedKat ? document.querySelector(`label[for="${selectedKat.id}"]`).textContent.trim() : 'Berat';
+            // Extract category text without emoji
+            const category = kategoriLabel.replace(/[^\w\s]/gi, '').trim();
+            
             const btn = this.querySelector('button[type="submit"]');
             const originalText = btn.innerHTML;
             btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Menyimpan...';
+            btn.disabled = true;
             
-            setTimeout(() => {
-                // Success State
+            // Build FormData for multipart upload
+            const formData = new FormData();
+            formData.append('name', spotName);
+            formData.append('category', category);
+            formData.append('latitude', document.getElementById('spot-lat').value);
+            formData.append('longitude', document.getElementById('spot-lng').value);
+            
+            if (photoInput.files[0]) {
+                formData.append('photo', photoInput.files[0]);
+            }
+
+            fetch('/api/food-spots', {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': CSRF_TOKEN,
+                    'Accept': 'application/json',
+                },
+                body: formData
+            })
+            .then(res => {
+                if (!res.ok) return res.json().then(err => { throw err; });
+                return res.json();
+            })
+            .then(data => {
                 offcanvas.hide();
                 btn.innerHTML = originalText;
+                btn.disabled = false;
                 this.reset();
+                resetPhotoUI();
                 
-                // Make marker permanent and show success popup
                 if(newMarker) {
                     newMarker.dragging.disable();
-                    const successPopup = `
-                        <div class="p-3 text-center">
-                            <div class="text-success mb-2"><i class="bi bi-check-circle-fill" style="font-size: 3rem;"></i></div>
-                            <h6 class="fw-bold mb-0">${spotName}</h6>
-                            <p class="text-muted small mt-1">Berhasil ditambahkan ke radar!</p>
-                        </div>
-                    `;
-                    newMarker.bindPopup(successPopup).openPopup();
-                    
-                    // Change icon to default shop icon
-                    newMarker.setIcon(createCustomIcon('bi-shop'));
-                    newMarker = null; // reset reference
+                    const spot = data.spot;
+                    const iconClass = categoryIcons[spot.category] || 'bi-shop';
+                    newMarker.setIcon(createCustomIcon(iconClass));
+                    newMarker.bindPopup(createSpotPopup(spot)).openPopup();
+                    newMarker = null;
                 }
                 
                 cancelAddMode();
+            })
+            .catch(err => {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+                console.error('Upload error:', err);
                 
-            }, 1200);
+                let msg = 'Gagal menyimpan spot. ';
+                if (err.errors) {
+                    msg += Object.values(err.errors).flat().join(', ');
+                } else if (err.message) {
+                    msg += err.message;
+                }
+                alert(msg);
+            });
         });
 
         // Cancel Add Mode when offcanvas is dismissed without saving
@@ -343,6 +447,7 @@
                 newMarker = null;
             }
             cancelAddMode();
+            resetPhotoUI();
         });
 
         // Helper to reset UI state
@@ -355,13 +460,6 @@
                  newMarker = null;
             }
         }
-        
-        // Dummy photo upload interaction
-        document.getElementById('upload-photo-btn').addEventListener('click', function() {
-            this.classList.remove('text-danger', 'border-danger');
-            this.classList.add('text-success', 'border-success', 'bg-success', 'bg-opacity-10');
-            this.innerHTML = '<i class="bi bi-check-lg fs-2"></i>';
-        });
     });
 </script>
 @endsection
