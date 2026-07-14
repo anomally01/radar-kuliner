@@ -29,7 +29,7 @@ class FoodSpotController extends Controller
                     'category'  => $spot->category,
                     'lat'       => (float) $spot->latitude,
                     'lng'       => (float) $spot->longitude,
-                    'photo_url' => $spot->photo ? asset('storage/' . $spot->photo) : null,
+                    'photo_url' => $spot->photo ? $this->getPhotoUrl($spot->photo) : null,
                     'user'      => $spot->user->name ?? 'Anonim',
                     'created'   => $spot->created_at->diffForHumans(),
                 ];
@@ -53,7 +53,9 @@ class FoodSpotController extends Controller
 
         $photoPath = null;
         if ($request->hasFile('photo')) {
-            $photoPath = $request->file('photo')->store('food-spots', 'public');
+            // Uses whatever disk is configured: 'public' locally, 's3' on Vercel/Supabase
+            $disk = config('filesystems.default') === 's3' ? 's3' : 'public';
+            $photoPath = $request->file('photo')->store('food-spots', $disk);
         }
 
         $spot = FoodSpot::create([
@@ -74,10 +76,28 @@ class FoodSpotController extends Controller
                 'category'  => $spot->category,
                 'lat'       => (float) $spot->latitude,
                 'lng'       => (float) $spot->longitude,
-                'photo_url' => $photoPath ? asset('storage/' . $photoPath) : null,
+                'photo_url' => $photoPath ? $this->getPhotoUrl($photoPath) : null,
                 'user'      => Auth::user()->name,
                 'created'   => $spot->created_at->diffForHumans(),
             ],
         ], 201);
+    }
+
+    /**
+     * Get the public URL for a photo, supporting both local and S3/Supabase storage.
+     */
+    private function getPhotoUrl(string $path): string
+    {
+        if (config('filesystems.default') === 's3') {
+            // For Supabase Storage: use the public URL from env, or generate via S3
+            $publicUrl = env('SUPABASE_STORAGE_URL');
+            if ($publicUrl) {
+                return rtrim($publicUrl, '/') . '/' . $path;
+            }
+            return Storage::disk('s3')->url($path);
+        }
+
+        // Local storage
+        return asset('storage/' . $path);
     }
 }
