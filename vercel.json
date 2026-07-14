@@ -4,16 +4,21 @@
         {
             "src": "api/index.php",
             "use": "vercel-php@0.7.2"
-        },
-        {
-            "src": "package.json",
-            "use": "@vercel/static-build",
-            "config": {
-                "distDir": "public"
-            }
         }
     ],
     "routes": [
+        {
+            "src": "/build/(.*)",
+            "dest": "/build/$1"
+        },
+        {
+            "src": "/favicon.ico",
+            "dest": "/favicon.ico"
+        },
+        {
+            "src": "/robots.txt",
+            "dest": "/robots.txt"
+        },
         {
             "handle": "filesystem"
         },
@@ -25,6 +30,7 @@
     "env": {
         "APP_NAME": "Radar Kuliner",
         "APP_ENV": "production",
+        "APP_KEY": "base64:IPFSemhnSPmTlNlSQ51ZT7IOxj6Dsl5t54J7hlYfumo=",
         "APP_DEBUG": "false",
         "APP_URL": "https://radar-kuliner.vercel.app",
         "APP_CONFIG_CACHE": "/tmp/config.php",
@@ -38,7 +44,7 @@
         "SESSION_SECURE_COOKIE": "true",
         "CACHE_STORE": "array",
         "QUEUE_CONNECTION": "sync",
-        "FILESYSTEM_DISK": "s3",
+        "FILESYSTEM_DISK": "local",
         "AWS_USE_PATH_STYLE_ENDPOINT": "true"
     }
 }
