@@ -3,24 +3,38 @@
     "builds": [
         {
             "src": "api/index.php",
-            "use": "vercel-php@0.7.2"
+            "use": "vercel-php@0.7.2",
+            "config": {
+                "includeFiles": [
+                    "app/**",
+                    "bootstrap/**",
+                    "config/**",
+                    "database/**",
+                    "public/**",
+                    "resources/**",
+                    "routes/**",
+                    "storage/framework/views/.gitkeep",
+                    "vendor/**"
+                ]
+            }
         }
     ],
     "routes": [
         {
-            "src": "/build/(.*)",
-            "dest": "/build/$1"
+            "src": "/build/assets/(.*)",
+            "dest": "/public/build/assets/$1"
+        },
+        {
+            "src": "/build/manifest.json",
+            "dest": "/public/build/manifest.json"
         },
         {
             "src": "/favicon.ico",
-            "dest": "/favicon.ico"
+            "dest": "/public/favicon.ico"
         },
         {
             "src": "/robots.txt",
-            "dest": "/robots.txt"
-        },
-        {
-            "handle": "filesystem"
+            "dest": "/public/robots.txt"
         },
         {
             "src": "/(.*)",
@@ -32,7 +46,7 @@
         "APP_ENV": "production",
         "APP_KEY": "base64:IPFSemhnSPmTlNlSQ51ZT7IOxj6Dsl5t54J7hlYfumo=",
         "APP_DEBUG": "false",
-        "APP_URL": "https://radar-kuliner.vercel.app",
+        "APP_URL": "https://radar-kuliner-three.vercel.app",
         "APP_CONFIG_CACHE": "/tmp/config.php",
         "APP_EVENTS_CACHE": "/tmp/events.php",
         "APP_PACKAGES_CACHE": "/tmp/packages.php",
