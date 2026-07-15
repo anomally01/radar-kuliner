@@ -218,9 +218,9 @@
     <div class="row g-4 justify-content-center mb-5">
         @php
             $team = [
-                ['name' => 'Developer', 'role' => 'Full-Stack Developer', 'emoji' => '👨‍💻', 'desc' => 'Laravel & JavaScript'],
-                ['name' => 'UI Designer', 'role' => 'UI/UX Designer', 'emoji' => '🎨', 'desc' => 'Bootstrap & CSS Glassmorphism'],
-                ['name' => 'Backend Dev', 'role' => 'Database Engineer', 'emoji' => '🗄️', 'desc' => 'PostgreSQL & Supabase'],
+                ['name' => 'Developer', 'role' => 'Full-Stack Developer', 'emoji' => '👨‍💻', 'desc' => 'Rakha Wismaya'],
+                ['name' => 'UI Designer', 'role' => 'UI/UX Designer', 'emoji' => '🎨', 'desc' => 'Rey & Hakim'],
+                ['name' => 'Backend Dev', 'role' => 'Database Engineer', 'emoji' => '🗄️', 'desc' => 'Taufik'],
             ];
         @endphp
         @foreach($team as $member)
@@ -254,10 +254,10 @@
     <div class="text-center pb-3">
         <p class="text-muted mb-2">Hubungi kami:</p>
         <div class="d-flex justify-content-center gap-3">
-            <a href="https://github.com" target="_blank" class="btn btn-outline-dark rounded-pill px-3">
+            <a href="https://github.com/anomally01/radar-kuliner" target="_blank" class="btn btn-outline-dark rounded-pill px-3">
                 <i class="bi bi-github me-1"></i>GitHub
             </a>
-            <a href="mailto:radarkuliner@example.com" class="btn btn-outline-danger rounded-pill px-3">
+            <a href="mailto:anomally0001@gmail.com" class="btn btn-outline-danger rounded-pill px-3">
                 <i class="bi bi-envelope me-1"></i>Email
             </a>
             <a href="{{ route('tutorial') }}" class="btn btn-danger rounded-pill px-3">
