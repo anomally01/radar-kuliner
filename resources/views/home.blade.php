@@ -236,6 +236,7 @@
             filterPanelOpen = !filterPanelOpen;
             document.getElementById('filter-panel').classList.toggle('open', filterPanelOpen);
             document.getElementById('filter-toggle-btn').classList.toggle('panel-open', filterPanelOpen);
+            document.getElementById('filter-panel').classList.remove('hidden');
         };
 
         window.setSortBy = function(btn, val) {
